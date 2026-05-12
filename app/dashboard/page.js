@@ -14,7 +14,6 @@ export default function Dashboard() {
   const [colabFilter, setColabFilter] = useState('all')
   const [viewerFilter, setViewerFilter] = useState('all')
 
-  // Modals
   const [modalCliente, setModalCliente] = useState(false)
   const [modalTarea, setModalTarea] = useState(false)
   const [modalUsuario, setModalUsuario] = useState(false)
@@ -25,7 +24,6 @@ export default function Dashboard() {
   const [updatingTask, setUpdatingTask] = useState(null)
   const [viewingUpdates, setViewingUpdates] = useState(null)
 
-  // Forms
   const [formCliente, setFormCliente] = useState({ name: '', desc: '' })
   const [formTarea, setFormTarea] = useState({ title: '', desc: '', client_id: '', cat: '', pri: 'med', date: '', assigned_to: '' })
   const [formUsuario, setFormUsuario] = useState({ name: '', email: '', password: '', role: 'colab', client_id: '' })
@@ -61,12 +59,9 @@ export default function Dashboard() {
     window.location.href = '/'
   }
 
-  function esc(s) { return String(s || '') }
   function statusLabel(s) { return { todo: 'Pendiente', progress: 'En progreso', done: 'Completada', blocked: 'Bloqueada' }[s] || s }
-  function statusBadge(s) { return { todo: 'b-todo', progress: 'b-progress', done: 'b-done', blocked: 'b-blocked' }[s] || 'b-todo' }
-  function priClass(p) { return { high: 'p-high', med: 'p-med', low: 'p-low' }[p] || 'p-med' }
   function clientProgress(clientId) {
-    const ts = tasks.filter(t => t.client_id === clientId)
+    const ts = tasks.filter(t => t.client_id == clientId)
     if (!ts.length) return 0
     return Math.round(ts.reduce((a, t) => a + (t.progress || 0), 0) / ts.length)
   }
@@ -77,7 +72,6 @@ export default function Dashboard() {
     return parseInt(day) + ' ' + mn[parseInt(m) - 1]
   }
 
-  // ── CLIENTES ──────────────────────────────────────
   async function saveCliente() {
     if (!formCliente.name) return notify('El nombre es obligatorio', 'error')
     if (editingCliente) {
@@ -91,7 +85,7 @@ export default function Dashboard() {
 
   async function deleteCliente(id) {
     if (!confirm('¿Eliminar este cliente y todas sus tareas?')) return
-    const clientTasks = tasks.filter(t => t.client_id === id)
+    const clientTasks = tasks.filter(t => t.client_id == id)
     for (const t of clientTasks) {
       await supabase.from('updates').delete().eq('task_id', t.id)
       await supabase.from('tasks').delete().eq('id', t.id)
@@ -100,7 +94,6 @@ export default function Dashboard() {
     await loadData(); notify('Cliente eliminado')
   }
 
-  // ── TAREAS ──────────────────────────────────────
   async function saveTarea() {
     if (!formTarea.title) return notify('El título es obligatorio', 'error')
     if (!formTarea.client_id) return notify('Seleccioná un cliente', 'error')
@@ -123,7 +116,6 @@ export default function Dashboard() {
     await loadData(); notify('Tarea eliminada')
   }
 
-  // ── USUARIOS ──────────────────────────────────────
   async function saveUsuario() {
     if (!formUsuario.name || !formUsuario.email || !formUsuario.password) return notify('Completá todos los campos', 'error')
     if (formUsuario.password.length < 6) return notify('La contraseña debe tener al menos 6 caracteres', 'error')
@@ -144,7 +136,6 @@ export default function Dashboard() {
     await loadData(); notify('Usuario eliminado')
   }
 
-  // ── UPDATE (colab) ──────────────────────────────────────
   async function saveUpdate() {
     let status = formUpdate.status
     if (parseInt(formUpdate.progress) === 100) status = 'done'
@@ -159,7 +150,6 @@ export default function Dashboard() {
     await loadData(); notify('Progreso actualizado ✓')
   }
 
-  // ── NOTIFY ──────────────────────────────────────
   function notify(msg, type = 'success') {
     const n = document.getElementById('notif')
     if (!n) return
@@ -183,7 +173,6 @@ export default function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', background: '#FAF7F2', fontFamily: 'DM Sans, sans-serif' }}>
 
-      {/* TOPBAR */}
       <div style={{ background: '#3B2A1A', padding: '0 2rem', height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 20, color: '#FAF7F2', margin: 0 }}>Creación de <em style={{ color: '#E8B04A' }}>Roble</em></h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -195,17 +184,14 @@ export default function Dashboard() {
 
       <div style={{ padding: '2rem', maxWidth: 1100, margin: '0 auto' }}>
 
-        {/* ── ADMIN VIEW ── */}
         {profile?.role === 'admin' && (
           <div>
-            {/* Tabs */}
             <div style={{ display: 'flex', gap: 4, marginBottom: '2rem', background: '#F2EDE4', padding: 4, borderRadius: 10, width: 'fit-content', border: '1px solid rgba(59,42,26,0.15)' }}>
               {[['clientes', '🏢 Clientes'], ['tareas', '✅ Tareas'], ['usuarios', '👥 Usuarios']].map(([key, label]) => (
                 <button key={key} onClick={() => setActiveTab(key)} style={{ padding: '7px 18px', borderRadius: 8, fontSize: 13, border: 'none', cursor: 'pointer', background: activeTab === key ? '#3B2A1A' : 'transparent', color: activeTab === key ? '#FAF7F2' : '#7A6A55', fontWeight: activeTab === key ? 500 : 400 }}>{label}</button>
               ))}
             </div>
 
-            {/* CLIENTES */}
             {activeTab === 'clientes' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -216,7 +202,7 @@ export default function Dashboard() {
                   {clients.length === 0 && <p style={{ color: '#7A6A55' }}>No hay clientes aún.</p>}
                   {clients.map(c => {
                     const pct = clientProgress(c.id)
-                    const cTasks = tasks.filter(t => t.client_id === c.id)
+                    const cTasks = tasks.filter(t => t.client_id == c.id)
                     const done = cTasks.filter(t => t.status === 'done').length
                     return (
                       <div key={c.id} style={{ background: '#fff', border: '1px solid rgba(59,42,26,0.15)', borderRadius: 16, padding: '1.25rem' }}>
@@ -236,14 +222,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* TAREAS */}
             {activeTab === 'tareas' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div><h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#3B2A1A', margin: 0 }}>Todas las tareas</h2><p style={{ fontSize: 12, color: '#7A6A55', marginTop: 2 }}>Administrá tareas de todos los clientes</p></div>
                   <button onClick={() => { setEditingTarea(null); setFormTarea({ title: '', desc: '', client_id: '', cat: '', pri: 'med', date: '', assigned_to: '', status: 'todo', progress: 0 }); setModalTarea(true) }} style={btnOak}>+ Nueva tarea</button>
                 </div>
-                {/* Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: '2rem' }}>
                   {[
                     { num: tasks.length, label: 'Total tareas', color: '#3B2A1A' },
@@ -257,16 +241,14 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                {/* Filter */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                  {[{ v: 'all', l: 'Todos' }, ...clients.map(c => ({ v: c.id, l: c.name }))].map(f => (
+                  {[{ v: 'all', l: 'Todos' }, ...clients.map(c => ({ v: String(c.id), l: c.name }))].map(f => (
                     <button key={f.v} onClick={() => setAdminFilter(f.v)} style={{ padding: '5px 14px', borderRadius: 99, fontSize: 12, border: '1px solid rgba(59,42,26,0.28)', cursor: 'pointer', background: adminFilter === f.v ? '#3B2A1A' : 'transparent', color: adminFilter === f.v ? '#FAF7F2' : '#7A6A55' }}>{f.l}</button>
                   ))}
                 </div>
-                {/* Task list */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {(adminFilter === 'all' ? tasks : tasks.filter(t => t.client_id === adminFilter)).map(t => {
-                    const client = clients.find(c => c.id === t.client_id)
+                  {(adminFilter === 'all' ? tasks : tasks.filter(t => t.client_id == adminFilter)).map(t => {
+                    const client = clients.find(c => c.id == t.client_id)
                     const assignee = t.assigned_to ? users.find(u => u.id === t.assigned_to) : null
                     const updCount = updates.filter(u => u.task_id === t.id).length
                     return (
@@ -298,7 +280,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* USUARIOS */}
             {activeTab === 'usuarios' && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -307,7 +288,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {users.filter(u => u.role !== 'admin').map(u => {
-                    const client = u.client_id ? clients.find(c => c.id === u.client_id) : null
+                    const client = u.client_id ? clients.find(c => c.id == u.client_id) : null
                     const rc2 = roleColors[u.role] || roleColors.viewer
                     return (
                       <div key={u.id} style={{ background: '#fff', border: '1px solid rgba(59,42,26,0.15)', borderRadius: 16, padding: '1rem 1.25rem' }}>
@@ -330,7 +311,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── COLLABORATOR VIEW ── */}
         {profile?.role === 'colab' && (
           <div>
             <div style={{ marginBottom: '1.25rem' }}>
@@ -344,7 +324,7 @@ export default function Dashboard() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {tasks.filter(t => {
-                if (profile.client_id && t.client_id !== profile.client_id) return false
+                if (profile.client_id && t.client_id != profile.client_id) return false
                 if (colabFilter !== 'all' && t.status !== colabFilter) return false
                 return true
               }).map(t => {
@@ -374,23 +354,22 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── VIEWER VIEW ── */}
         {profile?.role === 'viewer' && (
           <div>
             <div style={{ background: '#3B2A1A', borderRadius: 16, padding: '1.5rem 2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#FAF7F2', margin: 0 }}>{profile.client_id ? clients.find(c => c.id === profile.client_id)?.name || 'Progreso' : 'Progreso general'}</h2>
+                <h2 style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#FAF7F2', margin: 0 }}>{profile.client_id ? clients.find(c => c.id == profile.client_id)?.name || 'Progreso' : 'Progreso general'}</h2>
                 <p style={{ fontSize: 13, color: 'rgba(250,247,242,.6)', marginTop: 4 }}>Seguimiento en tiempo real de tus proyectos</p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontFamily: 'Georgia, serif', fontSize: 48, fontWeight: 700, color: '#E8B04A', lineHeight: 1 }}>
-                  {tasks.filter(t => !profile.client_id || t.client_id === profile.client_id).length ? Math.round(tasks.filter(t => !profile.client_id || t.client_id === profile.client_id).reduce((a, t) => a + (t.progress || 0), 0) / tasks.filter(t => !profile.client_id || t.client_id === profile.client_id).length) : 0}%
+                  {tasks.filter(t => !profile.client_id || t.client_id == profile.client_id).length ? Math.round(tasks.filter(t => !profile.client_id || t.client_id == profile.client_id).reduce((a, t) => a + (t.progress || 0), 0) / tasks.filter(t => !profile.client_id || t.client_id == profile.client_id).length) : 0}%
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(250,247,242,.5)' }}>completado</div>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {tasks.filter(t => !profile.client_id || t.client_id === profile.client_id).map(t => (
+              {tasks.filter(t => !profile.client_id || t.client_id == profile.client_id).map(t => (
                 <div key={t.id} style={{ background: '#fff', border: '1px solid rgba(59,42,26,0.15)', borderRadius: 16, padding: '1rem 1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <span style={{ fontSize: 15, fontWeight: 500, color: '#3B2A1A' }}>{t.title}</span>
@@ -406,9 +385,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── MODALES ── */}
-
-      {/* Modal Cliente */}
       {modalCliente && (
         <div style={modalBg} onClick={e => e.target === e.currentTarget && setModalCliente(false)}>
           <div style={modalBox}>
@@ -425,7 +401,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal Tarea */}
       {modalTarea && (
         <div style={modalBg} onClick={e => e.target === e.currentTarget && setModalTarea(false)}>
           <div style={modalBox}>
@@ -491,7 +466,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal Usuario */}
       {modalUsuario && (
         <div style={modalBg} onClick={e => e.target === e.currentTarget && setModalUsuario(false)}>
           <div style={modalBox}>
@@ -532,7 +506,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal Update */}
       {modalUpdate && updatingTask && (
         <div style={modalBg} onClick={e => e.target === e.currentTarget && setModalUpdate(false)}>
           <div style={modalBox}>
@@ -557,7 +530,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Modal Updates history */}
       {modalUpdates && viewingUpdates && (
         <div style={modalBg} onClick={e => e.target === e.currentTarget && setModalUpdates(false)}>
           <div style={modalBox}>
@@ -581,13 +553,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Notification */}
       <div id="notif" style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', background: '#3B2A1A', color: '#FAF7F2', padding: '12px 18px', borderRadius: 10, fontSize: 13, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', zIndex: 9999, transform: 'translateY(100px)', opacity: 0, transition: 'all .3s', maxWidth: 300 }} />
     </div>
   )
 }
 
-// ── Estilos reutilizables ──────────────────────────
 function badgeStyle(s) {
   const styles = {
     todo: { background: '#F1EFE8', color: '#5F5E5A', border: '1px solid #D3D1C7' },
