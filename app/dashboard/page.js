@@ -15,11 +15,12 @@ export default function Dashboard() {
         return
       }
       setUser(session.user)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('email', session.user.email)
         .single()
+      console.log('perfil:', data, 'error:', error)
       setProfile(data)
       setLoading(false)
     }
